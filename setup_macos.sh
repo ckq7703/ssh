@@ -5,28 +5,36 @@ read -p "Nhập hostname Cloudflare Tunnel (ví dụ: hv1-node01.smartpro.edu.vn
 read -p "Nhập cổng SSH cục bộ (ví dụ: 2222): " PORT
 read -p "Nhập tên user SSH (ví dụ: admin): " USERSSH
 
-# 📦 Kiểm tra kiến trúc CPU
-ARCH=$(uname -m)
-if [[ "$ARCH" == "x86_64" ]]; then
-    ARCH_URL="cloudflared-darwin-amd64.tgz"
-elif [[ "$ARCH" == "arm64" ]]; then
-    ARCH_URL="cloudflared-darwin-arm64.tgz"
-else
-    echo "❌ Không hỗ trợ kiến trúc $ARCH"
-    exit 1
-fi
-
-# 📁 Tải và giải nén nếu cloudflared chưa có
+# 🧪 Kiểm tra nếu cloudflared chưa cài
 if ! command -v cloudflared >/dev/null 2>&1; then
-    echo "⏬ Tải cloudflared tương thích với $ARCH..."
-    curl -LO "https://github.com/cloudflare/cloudflared/releases/latest/download/$ARCH_URL"
-    tar -xvzf $ARCH_URL
-    chmod +x cloudflared
-    sudo mv cloudflared /usr/local/bin/
-    rm $ARCH_URL
-    echo "✅ cloudflared đã được cài đặt."
+  echo "⏬ cloudflared chưa có. Đang tải..."
+
+  ARCH=$(uname -m)
+  if [[ "$ARCH" == "x86_64" ]]; then
+    URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-darwin-amd64.tgz"
+  elif [[ "$ARCH" == "arm64" ]]; then
+    URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-darwin-arm64.tgz"
+  else
+    echo "❌ Kiến trúc CPU không được hỗ trợ: $ARCH"
+    exit 1
+  fi
+
+  curl -LO "$URL"
+  tar -xzf cloudflared-*.tgz
+  rm cloudflared-*.tgz
+
+  # ⚠️ Kiểm tra thư mục đích
+  if [ ! -d "/usr/local/bin" ]; then
+    echo "📁 Tạo thư mục /usr/local/bin vì chưa tồn tại..."
+    sudo mkdir -p /usr/local/bin
+  fi
+
+  sudo mv cloudflared /usr/local/bin/cloudflared
+  sudo chmod +x /usr/local/bin/cloudflared
+
+  echo "✅ cloudflared đã được cài đặt."
 else
-    echo "✅ cloudflared đã sẵn sàng."
+  echo "✅ cloudflared đã có sẵn."
 fi
 
 # 📌 Tạo PID file để quản lý tiến trình
