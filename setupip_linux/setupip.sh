@@ -86,3 +86,23 @@ echo "Cấu hình IP hiện tại:"
 ip addr show "$interface"
 
 echo "Cấu hình IP tĩnh hoàn tất. Cấu hình sẽ được lưu vĩnh viễn sau khi reboot."
+
+# Cài đặt Docker nếu chưa có
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Docker chưa có. Đang cài đặt docker.io..."
+  apt update
+  apt install -y docker.io
+  systemctl enable --now docker
+else
+  echo "Docker đã được cài đặt."
+fi
+
+# Chạy container Cloudflare Tunnel
+echo "Khởi chạy container cloudflared..."
+docker rm -f smartprossh 2>/dev/null
+
+docker run -d --name smartprossh --restart=always \
+  cloudflare/cloudflared:latest tunnel --no-autoupdate run \
+  --token eyJhIjoiYjY3OTYwMGZmY2ZmZGQ2N2EwODRlZTczNjE5Y2FlZGUiLCJ0IjoiNmUwYmQyMmYtOTQ5ZS00YjQ4LTg5ZjctNTA2NzRkMDhhZjU4IiwicyI6Ik16VXhOalJqWkRjdFpETTRNQzAwT1RneExXRm1aV0l0WW1Wa1pHSXdObUUzTldSbSJ9
+
+echo "Container smartprossh đã được khởi chạy."
