@@ -70,6 +70,7 @@ network:
   version: 2
   ethernets:
     $interface:
+	  dhcp4: no
       addresses:
         - $ip_addr/$subnet
       gateway4: $gateway
