@@ -6,24 +6,33 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# Nhập thông tin người dùng và hostname máy chủ
-read -p "Nhập tên user muốn tạo (ví dụ: devuser): " NEWUSER
-read -p "Nhập hostname máy chủ muốn đặt (ví dụ: hv1-node01): " NEWHOSTNAME
+# --- HỎI NGƯỜI DÙNG CÓ MUỐN TẠO USER MỚI KHÔNG ---
+read -p "Bạn có muốn tạo user mới không? (yes/no): " CREATE_USER
+if [[ "$CREATE_USER" =~ ^[Yy][Ee]?[Ss]?$ ]]; then
+  read -p "Nhập tên user muốn tạo (ví dụ: devuser): " NEWUSER
 
-# Tạo user mới nếu chưa tồn tại
-if id "$NEWUSER" &>/dev/null; then
-  echo "User '$NEWUSER' đã tồn tại."
+  if id "$NEWUSER" &>/dev/null; then
+    echo "User '$NEWUSER' đã tồn tại."
+  else
+    echo "Đang tạo user '$NEWUSER'..."
+    useradd -m -s /bin/bash "$NEWUSER"
+    echo "User '$NEWUSER' đã được tạo."
+    passwd "$NEWUSER"
+  fi
 else
-  echo "Đang tạo user '$NEWUSER'..."
-  useradd -m -s /bin/bash "$NEWUSER"
-  echo "User '$NEWUSER' đã được tạo."
-  passwd "$NEWUSER"
+  echo "Bỏ qua bước tạo user mới."
 fi
 
-# Đổi hostname máy chủ
-echo "Đang đặt hostname thành '$NEWHOSTNAME'..."
-hostnamectl set-hostname "$NEWHOSTNAME"
-echo "Hostname đã được đổi thành $(hostname)."
+# --- HỎI NGƯỜI DÙNG CÓ MUỐN ĐỔI HOSTNAME KHÔNG ---
+read -p "Bạn có muốn đổi hostname máy chủ không? (yes/no): " CHANGE_HOSTNAME
+if [[ "$CHANGE_HOSTNAME" =~ ^[Yy][Ee]?[Ss]?$ ]]; then
+  read -p "Nhập hostname máy chủ muốn đặt (ví dụ: hv1-node01): " NEWHOSTNAME
+  echo "Đang đặt hostname thành '$NEWHOSTNAME'..."
+  hostnamectl set-hostname "$NEWHOSTNAME"
+  echo "Hostname đã được đổi thành $(hostname)."
+else
+  echo "Bỏ qua bước đổi hostname."
+fi
 
 # Lấy danh sách interface mạng
 echo "Danh sách interface mạng:"
